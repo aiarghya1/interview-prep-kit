@@ -1,0 +1,24 @@
+# Render Blueprint for the API (free web service). The web app deploys to Vercel.
+services:
+  - type: web
+    name: interview-prep-kit-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm run start:api
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GROQ_API_KEY
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: GROQ_TPM
+        value: "6000"
