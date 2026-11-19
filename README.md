@@ -48,14 +48,41 @@ You can then reshape any part of it, practise against it, and check your own sto
 | Discussion search | Tavily (optional free key), Reddit public JSON, Hacker News Algolia API | See [Sources](#sources-used). |
 | Tests | Vitest, Supertest, mongodb-memory-server | |
 
-The monorepo uses npm workspaces:
+Frontend and backend live in **one repository** (npm workspaces) and deploy **separately**:
 
 ```
-packages/core   pipeline, schema, schedule, coverage, edits, practice, stories, batch CLI, fixture sites
-apps/api        Express API: auth, kits, background jobs
-apps/web        Next.js interface
-examples/       sample batch input
+interview-prep-kit/
+├── apps/
+│   ├── web/              frontend: Next.js + Tailwind                    → Vercel (root dir apps/web)
+│   │   ├── src/app/          pages: login, register, kits, kits/[id]
+│   │   ├── src/components/   dashboard, builder (kit/*), shared UI
+│   │   ├── src/lib/          API client, useKit (optimistic edits), batch-file parsing
+│   │   └── test/             component + hook tests (jsdom)
+│   └── api/              backend: Express + MongoDB                      → Render (render.yaml)
+│       ├── src/auth/         register, login, JWT cookie sessions
+│       ├── src/kits/         routes, dedupe, versioned store
+│       ├── src/jobs/         background generation / regeneration
+│       └── test/             integration tests (in-memory MongoDB)
+├── packages/
+│   └── core/             shared by both apps and the batch command
+│       ├── src/retrieval/    URL policy, robots.txt, fetcher, crawler
+│       ├── src/discussion/   public interview-discussion search
+│       ├── src/llm/          Groq client: pacing, retries, JSON repair
+│       ├── src/steps/        extraction, brief, hiring process, questions, flashcards
+│       ├── src/*.ts          pipeline, schema, schedule, coverage, edit, merge,
+│       │                     regenerate, practice, stories
+│       ├── src/cli/          npm run evaluate (batch entry point)
+│       ├── fixtures/         local company sites for tests and demos (npm run fixtures)
+│       └── test/
+├── e2e/                  Playwright end-to-end tests (npm run test:e2e)
+├── examples/             sample batch input (cases.sample.json)
+├── scripts/              local MongoDB without installing it (npm run db:local)
+├── render.yaml           Render blueprint for the API
+├── playwright.config.ts
+└── .env.example          every environment variable, documented
 ```
+
+Why one repo: the kit schema, edit operations, schedule and coverage rules in `packages/core` are used by the API (to save and validate), by the browser (for instant optimistic edits) and by `npm run evaluate`. They exist once instead of being copied and drifting apart, and the batch command runs the application's own code, as the brief requires.
 
 ---
 
