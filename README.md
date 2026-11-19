@@ -10,7 +10,9 @@ Paste a job description and a company website, say how many days you have, and g
 
 You can then reshape any part of it, practise against it, and check your own stories against what the role asks for.
 
-> **Deployed:** web: _TBD_ · API: _TBD_ (see [Deployment](#deployment))
+> **Deployed:** web: **https://interview-prep-kit-cyan.vercel.app** · API: https://interview-prep-kit-api.onrender.com (see [Deployment](#deployment))
+>
+> The API runs on Render's free tier, which sleeps when idle: the first request after a quiet period can take up to a minute.
 
 ---
 
@@ -127,7 +129,7 @@ npm run typecheck
 ### Deployment
 
 - **API on Render** (free web service). [`render.yaml`](render.yaml) is a Blueprint: build `npm ci`, start `npm run start:api`, health check `/api/health`. Set `MONGODB_URI` (Atlas M0), `GROQ_API_KEY` and optionally `TAVILY_API_KEY`. `JWT_SECRET` is generated. `NODE_ENV=production` turns on private-address blocking and `Secure` cookies.
-- **Web on Vercel.** Set the project root to `apps/web` (Vercel installs the npm workspace from the repo root) and set `API_URL` to the Render URL.
+- **Web on Vercel.** Set the project root to `apps/web` (Vercel installs the npm workspace from the repo root) and set `API_URL` to the Render URL. Deploying from the CLI (`vercel deploy --prod` at the repo root) uploads local files, so [`.vercelignore`](.vercelignore) excludes `.env`, `.env.local` and `.data/` to keep secrets and local data out of the upload.
 - **Database on MongoDB Atlas** (free M0). Allow Render's outbound IPs, or `0.0.0.0/0` for a demo.
 
 Render's free tier sleeps when idle. The first request after a sleep takes about 30 s, and any jobs interrupted by a spin-down are re-queued on boot (see [Jobs](#slow-failing-or-repeated-generation)).
