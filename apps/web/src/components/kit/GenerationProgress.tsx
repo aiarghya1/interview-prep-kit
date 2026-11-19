@@ -74,15 +74,17 @@ export function GenerationProgress({ view, onRetry }: { view: KitView; onRetry: 
       <ol className="mt-6 space-y-2" aria-label="Generation steps">
         {[...known, ...extra].map((step) => {
           const p = steps.get(step);
-          const state = p?.status ?? 'pending';
+          const raw = p?.status ?? 'pending';
+          // A step still 'running' when the kit failed was abandoned, not in progress.
+          const state = failed && raw === 'running' ? 'stopped' : raw;
           return (
             <li key={step} className="flex items-start gap-3 text-sm">
               <span aria-hidden className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center">
-                {state === 'running' && !failed ? (
+                {state === 'running' ? (
                   <Spinner className="h-4 w-4 text-brand-600" />
                 ) : state === 'done' ? (
                   <span className="text-emerald-600">✓</span>
-                ) : state === 'skipped' ? (
+                ) : state === 'skipped' || state === 'stopped' ? (
                   <span className="text-slate-400">–</span>
                 ) : state === 'failed' ? (
                   <span className="text-red-600">!</span>
@@ -91,7 +93,7 @@ export function GenerationProgress({ view, onRetry }: { view: KitView; onRetry: 
                 )}
               </span>
               <div className="min-w-0">
-                <p className={cx('font-medium', state === 'pending' ? 'text-slate-400' : 'text-slate-800')}>
+                <p className={cx('font-medium', state === 'pending' || state === 'stopped' ? 'text-slate-400' : 'text-slate-800')}>
                   {STEP_LABEL[step] ?? step}
                   <span className="sr-only"> — {state}</span>
                 </p>
