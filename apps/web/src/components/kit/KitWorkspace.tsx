@@ -9,10 +9,11 @@ import { Overview } from './Overview';
 import { Practice } from './Practice';
 import { QuestionBoard } from './QuestionBoard';
 import { Schedule } from './Schedule';
+import { StoryBank } from './StoryBank';
 
-const TABS = ['overview', 'questions', 'flashcards', 'schedule', 'practice'] as const;
+const TABS = ['overview', 'questions', 'flashcards', 'schedule', 'practice', 'stories'] as const;
 type Tab = (typeof TABS)[number];
-const TAB_LABEL: Record<Tab, string> = { overview: 'Overview', questions: 'Questions', flashcards: 'Flashcards', schedule: 'Schedule', practice: 'Practice' };
+const TAB_LABEL: Record<Tab, string> = { overview: 'Overview', questions: 'Questions', flashcards: 'Flashcards', schedule: 'Schedule', practice: 'Practice', stories: 'Your stories' };
 
 function SaveIndicator({ state, error, unsaved }: { state: string; error: string | null; unsaved: number }) {
   const text =
@@ -118,6 +119,7 @@ export function KitWorkspace({ k, note }: { k: ReturnType<typeof useKit>; note?:
         {tab === 'flashcards' && <Flashcards kit={kit} dispatch={dispatch} regen={regen} onRegenerate={regenerate} />}
         {tab === 'schedule' && <Schedule kit={kit} stale={view.scheduleStale} regen={regen} onRegenerate={regenerate} />}
         {tab === 'practice' && <Practice kitId={view.id} kit={kit} />}
+        {tab === 'stories' && <StoryBank kitId={view.id} kit={kit} initial={view.stories ?? []} />}
       </div>
     </div>
   );

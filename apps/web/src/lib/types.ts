@@ -1,6 +1,7 @@
 import type { Kit } from '@kit/core/schema';
 import type { IdHighWater } from '@kit/core/edit';
 import type { CardProgress, PracticeSummary } from '@kit/core/practice';
+import type { Story } from '@kit/core/stories';
 
 export type KitStatus = 'queued' | 'running' | 'ready' | 'failed';
 
@@ -32,6 +33,7 @@ export interface KitView {
   error: { code: string; message: string } | null;
   regen: RegenState | null;
   scheduleStale: boolean;
+  stories: Story[];
   createdAt: string;
   updatedAt: string;
 }
