@@ -76,6 +76,26 @@ export const ScheduleSchema = z.object({
 });
 export type Schedule = z.infer<typeof ScheduleSchema>;
 
+/** Extension: what research found and skipped, for honest reporting in the UI. */
+export const ResearchSchema = z.object({
+  hiring_page_found: z.boolean(),
+  hiring_process: z.object({
+    found: z.boolean(),
+    source_type: z.enum(['official', 'discussion', 'none']),
+    stages: z.array(z.object({ name: z.string(), description: z.string() })),
+    formats: z.array(z.string()),
+    tips: z.array(z.string()),
+    sources: z.array(z.string()),
+  }),
+  discussion: z.array(z.object({ source: z.string(), url: z.string(), title: z.string() })),
+  skipped_sources: z.array(z.object({ url: z.string(), reason: z.string(), code: z.string().optional() })),
+  steps: z.array(
+    z.object({ step: z.string(), status: z.enum(['done', 'skipped', 'failed']), detail: z.string().optional(), ms: z.number().int().optional() }),
+  ),
+  thin_description: z.boolean(),
+});
+export type Research = z.infer<typeof ResearchSchema>;
+
 export const KitShape = z.object({
     source: z.object({
       company: z.string(),
@@ -107,6 +127,7 @@ export const KitShape = z.object({
       passes: z.number().int().nonnegative(),
       notes: z.array(z.string()).optional(),
     }),
+    research: ResearchSchema.optional(),
 });
 export type Kit = z.infer<typeof KitShape>;
 export const KitSchema = KitShape.superRefine((kit, ctx) => checkReferentialIntegrity(kit, ctx));
