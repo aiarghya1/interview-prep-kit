@@ -42,7 +42,7 @@ You can then reshape any part of it, practise against it, and check your own sto
 | Database | MongoDB with Mongoose (Atlas M0 in production) | Preferred stack. A kit is one nested document, which suits a document store. |
 | Shared logic | `@kit/core`, a TypeScript workspace package | The pipeline, schema, schedule, coverage, edit operations and practice rules live here once. The API, the batch command and the browser all use the same code (see [Architecture](#architecture)). |
 | Scraping | Native `fetch` and `cheerio` | Pages are mostly static HTML, so there's no headless browser. That keeps it fast, cheap and easy to deploy. |
-| LLM | **Groq** (free tier): `llama-3.3-70b-versatile`, falling back to `meta-llama/llama-4-scout-17b-16e-instruct` and then `llama-3.1-8b-instant` | Generous free tier, OpenAI-compatible JSON mode, fast. The model list is configurable through `GROQ_MODELS`. |
+| LLM | **Groq** (free tier): `openai/gpt-oss-120b` (with `reasoning_effort: low`), falling back to `openai/gpt-oss-20b`, then `llama-3.3-70b-versatile`, then `llama-3.1-8b-instant` | Generous free tier, OpenAI-compatible JSON mode, fast. Models a key can't use are skipped automatically, and the list is configurable through `GROQ_MODELS`. |
 | Discussion search | Tavily (optional free key), Reddit public JSON, Hacker News Algolia API | See [Sources](#sources-used). |
 | Tests | Vitest, Supertest, mongodb-memory-server | |
 
@@ -274,7 +274,7 @@ Code: `coverage.ts`.
    - **a pass closed no gaps.** Asking again would only spend rate-limited tokens: the model can't or won't cover what's left.
 4. **Fallback:** if a **must-have** is still uncovered, code adds a clearly labelled generic question (`state.origin = "template"`, shown as "Generic fallback" in the UI). Nice-to-haves may stay uncovered and are reported in `coverage.uncovered_requirement_ids`.
 
-**Why 3 passes:** gaps mostly come from a draft spreading too few questions over many requirements. Gap mode targets each missing requirement explicitly, so one gap pass should close most of them, and a second catches stragglers. Past that, each pass costs about 2 calls against a token-per-minute budget for very little, and the "no progress, stop" rule ends it even sooner. (The tests confirm the loop's behaviour with a scripted model; how many passes real Groq output needs is listed under known limitations until a timed run is done.) The template fallback means "the model gave up" never becomes "the kit ships without a must-have". It also stays honest: those questions are labelled as generic.
+**Why 3 passes:** gaps mostly come from a draft spreading too few questions over many requirements. Gap mode targets each missing requirement explicitly, so one gap pass should close most of them, and a second catches stragglers. Past that, each pass costs about 2 calls against a token-per-minute budget for very little, and the "no progress, stop" rule ends it even sooner. (In the measured run below, `gpt-oss-120b`'s first drafts covered every requirement in all five sample cases, so no gap pass was needed there. The gap path is exercised by the tests with a scripted model that deliberately under-covers.) The template fallback means "the model gave up" never becomes "the kit ships without a must-have". It also stays honest: those questions are labelled as generic.
 
 `coverage.passes` in the output is the number of generation passes, counting the first draft.
 
@@ -399,7 +399,7 @@ Keyboard: Space reveals, 1/2/3 rates.
 | Case | Behaviour |
 |---|---|
 | Invalid company URL | URL normalised (`acme.com` becomes `https://acme.com/`) and validated. If unusable, the kit is built from the description, with an `INVALID_COMPANY_URL` note and an honest brief. |
-| 404 / timeout / DNS failure | Retried where transient, then recorded in `skipped_sources`. Kit status stays **ok**, with a `COMPANY_UNREACHABLE` note and a code-written "no reliable information" brief. The model is never asked to describe the company. |
+| 404 / timeout / DNS failure | Retried where transient, then recorded in `skipped_sources`. Kit status stays **ok**, with a `COMPANY_UNREACHABLE` note and a code-written "no reliable information" brief. The model is never asked to describe the company. If the posting doesn't name the company either, the name guessed from the URL is **not** used for discussion search, because a guessed name finds namesakes. |
 | No hiring or about page | `NO_HIRING_PAGE` note. The hiring-process step is skipped, and the question prompts are told not to assume a format. |
 | Two-line stub description | Only grounded requirements survive (often 1–2). `research.thin_description = true` plus a note: "nothing has been invented to fill it out". Fewer questions follow naturally. |
 | No public discussion | `NO_PUBLIC_DISCUSSION` note. Hiring-process summary uses the site only, or is skipped. |
@@ -476,7 +476,7 @@ Keyboard: Space reveals, 1/2/3 rates.
 
 ### Known limitations
 
-- **Live free-tier throughput hasn't been measured yet.** Pacing, retries and the per-case budget are tested with fakes. The five-case, 15-minute target still needs a timed run against Groq.
+- **Measured on the Groq free tier** (`openai/gpt-oss-120b`, `examples/cases.sample.json` against the fixture sites): **5/5 ok in 219 s.** Per case: Acme 62 s, two-line stub 43 s, Initech 53 s, 404 site 60 s, duplicate 0 s (research reused). Groq returned several "slow down" responses during the run (1–12 s waits). All were absorbed by the retry and pacing logic. Real company sites with slower pages and more text will take longer, and the per-case budget skips optional steps rather than overrunning. A free key's **daily** token cap is the real ceiling. A full-detail kit makes about 8 model calls (Acme: extraction, hiring process, brief, four question categories, flashcards), plus one per gap pass. When the daily cap is hit, the client falls over to the next configured model.
 - **Model quality varies.** The heuristics (grounding threshold, priority cues) are English-centric and tuned on typical postings, so unusual formatting can mark a requirement wrongly. The evidence quote is shown on hover so you can check.
 - **The crawler doesn't run JavaScript.** Sites that render only client-side give little text, and this is recorded honestly.
 - **Reddit's anonymous JSON endpoint is frequently blocked.** Tavily makes discussion search much more reliable.
