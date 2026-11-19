@@ -17,6 +17,7 @@ export interface StoredKit {
   progress: { step: string; status: string; message: string; at: string }[];
   error?: { code?: string; message?: string };
   practice: Record<string, unknown>;
+  stories?: unknown[];
   regen?: { section?: string; status?: string; startedAt?: Date; finishedAt?: Date; message?: string };
   scheduleStale: boolean;
   createdAt: Date;
@@ -80,6 +81,7 @@ export function toView(doc: StoredKit) {
     error: doc.error?.code ? doc.error : null,
     regen: doc.regen?.section ? doc.regen : null,
     scheduleStale: Boolean(doc.scheduleStale),
+    stories: doc.stories ?? [],
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   };
