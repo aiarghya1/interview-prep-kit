@@ -58,7 +58,10 @@ export async function generateFlashcards(args: {
     temperature: 0.3,
   });
   const allowed = new Set(requirements.map((r) => r.id));
-  return out.flashcards.slice(0, n + 2).map((c) => ({
+  return out.flashcards
+    .filter((c) => c.front.trim().length > 0)
+    .slice(0, n + 2)
+    .map((c) => ({
     front: c.front.trim().slice(0, 500),
     back: c.back.trim().slice(0, 1500),
     requirement_ids: [...new Set(c.requirement_ids)].filter((id) => allowed.has(id)),

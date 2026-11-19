@@ -159,7 +159,10 @@ Return: {"questions": [{"prompt": "", "answer_outline": "", "difficulty": 2, "re
   });
 
   const allowed = new Set(plan.requirements.map((r) => r.id));
-  return out.questions.slice(0, plan.count + 2).map((q) => ({
+  return out.questions
+    .filter((q) => q.prompt.trim().length > 0)
+    .slice(0, plan.count + 2)
+    .map((q) => ({
     category: plan.category,
     prompt: q.prompt.trim().slice(0, 1000),
     answer_outline: q.answer_outline.trim().slice(0, 2000),
