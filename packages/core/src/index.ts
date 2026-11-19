@@ -11,3 +11,8 @@ export { Fetcher } from './retrieval/fetcher.js';
 export { RetrievalError } from './retrieval/errors.js';
 export { normaliseUserUrl, defaultUrlPolicy } from './retrieval/url.js';
 export type { HiringProcess, CompanyBrief } from './steps/research.js';
+export * from './edit.js';
+export * from './practice.js';
+export * from './regenerate.js';
+export { generateCategoryQuestions, planCategories } from './steps/questions.js';
+export { searchInterviewDiscussion, type DiscussionResult } from './discussion/search.js';
