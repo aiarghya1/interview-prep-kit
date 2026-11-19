@@ -58,7 +58,7 @@ export async function createKit(userId: string, input: KitInputBody, runner: Job
     status: 'queued',
     input,
     inputHash: hash,
-    title: input.jd.split('\n').find((l) => l.trim())?.trim().slice(0, 120) ?? 'New kit',
+    title: input.jd.split('\n').find((l) => l.trim())!.trim().slice(0, 120),
     progress: [{ step: 'queued', status: 'running', message: 'Waiting to start', at: new Date().toISOString() }],
   });
   runner.enqueue({ kind: 'generate', kitId: String(doc._id) });

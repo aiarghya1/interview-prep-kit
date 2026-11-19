@@ -31,7 +31,7 @@ function practiceView(doc: StoredKit) {
   const kit = doc.kit;
   if (!kit) throw new ApiError(409, 'KIT_NOT_READY', 'This kit is still being generated');
   const progress: Record<string, CardProgress> = {};
-  for (const [id, p] of Object.entries(doc.practice ?? {})) {
+  for (const [id, p] of Object.entries(doc.practice)) {
     const parsed = CardProgressSchema.safeParse(p);
     if (parsed.success) progress[id] = parsed.data;
   }
@@ -44,7 +44,7 @@ export function kitsRouter(config: Config, runner: JobRunner) {
   const createLimiter = rateLimit({
     windowMs: 60 * 60_000,
     limit: config.NODE_ENV === 'test' ? 1000 : 30,
-    keyGenerator: (req) => req.userId ?? req.ip ?? 'anon',
+    keyGenerator: (req) => req.userId!,
     handler: (_req, res) => res.status(429).json({ error: { code: 'RATE_LIMITED', message: 'You have created a lot of kits this hour. Try again later.' } }),
   });
 
@@ -103,7 +103,7 @@ export function kitsRouter(config: Config, runner: JobRunner) {
     asyncHandler(async (req, res) => {
       const doc = await KitModel.findOne(ownerFilter(req.params.id!, req.userId)).select('status progress error regen version scheduleStale').lean<StoredKit>();
       if (!doc) throw new ApiError(404, 'NOT_FOUND', 'Kit not found');
-      res.json({ status: doc.status, progress: doc.progress ?? [], error: doc.error?.code ? doc.error : null, regen: doc.regen?.section ? doc.regen : null, version: doc.version, scheduleStale: Boolean(doc.scheduleStale) });
+      res.json({ status: doc.status, progress: doc.progress, error: doc.error?.code ? doc.error : null, regen: doc.regen?.section ? doc.regen : null, version: doc.version, scheduleStale: Boolean(doc.scheduleStale) });
     }),
   );
 

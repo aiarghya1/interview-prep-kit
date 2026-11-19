@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.coerce.number().int().positive().default(4000),
+  PORT: z.coerce.number().int().nonnegative().default(4000), // 0 = any free port (tests)
   MONGODB_URI: z.string().default('mongodb://127.0.0.1:27017/interview-prep-kit'),
   JWT_SECRET: z.string().optional(),
   SESSION_TTL_HOURS: z.coerce.number().positive().default(24 * 7),
