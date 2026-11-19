@@ -53,7 +53,7 @@ export function Practice({ kitId, kit }: { kitId: string; kit: Kit }) {
         setData(res);
         setDone((d) => d + 1);
         setQueue((q) => {
-          const rest = (q ?? []).slice(1);
+          const rest = q!.slice(1);
           // A card you didn't know comes back once at the end of this session.
           if (confidence === 1 && !requeued.current.has(current.id)) {
             requeued.current.add(current.id);

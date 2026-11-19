@@ -101,7 +101,7 @@ export function Overview({ kit, dispatch, regen, onRegenerate, goToQuestions }: 
           ) : (
             <ul className="mt-2 space-y-1.5 text-sm">
               {kit.role.requirements.map((r) => {
-                const n = counts.get(r.id) ?? 0;
+                const n = counts.get(r.id)!;
                 const gap = n === 0;
                 return (
                   <li key={r.id} className={cx('flex items-start justify-between gap-2 rounded px-2 py-1', gap && r.priority === 'must' && 'bg-red-50')}>

@@ -16,7 +16,7 @@ import { CATEGORY_LABEL } from './labels';
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
 function nextId(stories: Story[]) {
-  return `s${stories.reduce((m, s) => Math.max(m, Number(s.id.slice(1)) || 0), 0) + 1}`;
+  return `s${stories.reduce((m, s) => Math.max(m, Number(s.id.slice(1))), 0) + 1}`;
 }
 
 export function StoryBank({ kitId, kit, initial }: { kitId: string; kit: Kit; initial: Story[] }) {
@@ -52,7 +52,7 @@ export function StoryBank({ kitId, kit, initial }: { kitId: string; kit: Kit; in
 
   const patch = (id: string, p: Partial<Story>) => update((list) => list.map((s) => (s.id === id ? { ...s, ...p } : s)));
   const analysis = useMemo(() => analyseStories(kit, stories), [kit, stories]);
-  const title = (id: string) => stories.find((s) => s.id === id)?.title ?? id;
+  const title = (id: string) => stories.find((s) => s.id === id)!.title;
   const questions = kit.questions.filter((q) => q.category === 'behavioural' || q.category === 'company-fit');
   const must = kit.role.requirements.filter((r) => r.priority === 'must');
 
@@ -77,7 +77,7 @@ export function StoryBank({ kitId, kit, initial }: { kitId: string; kit: Kit; in
                 <InlineText value={s.title} label={`Story ${s.id} title`} required multiline={false} className="text-base font-semibold" onCommit={(v) => patch(s.id, { title: v })} />
                 <div className="flex shrink-0 items-center gap-1">
                   {analysis.overused.includes(s.id) && <Badge tone="amber">Overused</Badge>}
-                  <span className="text-xs text-slate-500">{analysis.usage[s.id] ?? 0} Q</span>
+                  <span className="text-xs text-slate-500">{analysis.usage[s.id]} Q</span>
                   <Button size="sm" variant="ghost" className="text-red-700 hover:bg-red-50" aria-label={`Delete story ${s.title}`} onClick={() => update((l) => l.filter((x) => x.id !== s.id))}>
                     Delete
                   </Button>
@@ -134,7 +134,7 @@ export function StoryBank({ kitId, kit, initial }: { kitId: string; kit: Kit; in
             ) : (
               <ul className="mt-2 space-y-1.5 text-sm">
                 {must.map((r) => {
-                  const by = analysis.byRequirement[r.id] ?? [];
+                  const by = analysis.byRequirement[r.id]!;
                   return (
                     <li key={r.id} className={cx('rounded px-2 py-1', by.length === 0 && 'bg-amber-50')}>
                       <span className={cx(by.length === 0 && 'font-medium')}>{r.text}</span>
@@ -154,7 +154,7 @@ export function StoryBank({ kitId, kit, initial }: { kitId: string; kit: Kit; in
             ) : (
               <ul className="mt-2 space-y-2 text-sm">
                 {questions.map((q) => {
-                  const m = analysis.byQuestion[q.id] ?? [];
+                  const m = analysis.byQuestion[q.id]!;
                   return (
                     <li key={q.id}>
                       <p className="text-slate-800"><span className="mr-1 text-xs text-slate-400">{CATEGORY_LABEL[q.category]}</span>{q.prompt}</p>

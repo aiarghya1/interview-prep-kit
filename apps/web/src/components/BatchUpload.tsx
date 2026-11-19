@@ -26,11 +26,11 @@ export function BatchUpload({ onCreated }: { onCreated: () => void }) {
     setParsed({ ...parseBatchFile(file.name, await file.text(), 5), name: file.name });
   }
 
+  // Only reachable from the button, which exists only when there are rows.
   async function submit() {
-    if (!parsed?.rows.length) return;
     setBusy(true);
     try {
-      const res = await api<{ results: BatchResult[] }>('/kits/batch', { body: { items: parsed.rows } });
+      const res = await api<{ results: BatchResult[] }>('/kits/batch', { body: { items: parsed!.rows } });
       setResults(res.results);
       setParsed(null);
       if (input.current) input.current.value = '';

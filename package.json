@@ -17,6 +17,12 @@
     "start:api": "npm run start -w @kit/api",
     "dev:web": "npm run dev -w @kit/web",
     "build:web": "npm run build -w @kit/web",
-    "db:local": "node scripts/local-mongo.mjs"
+    "db:local": "node scripts/local-mongo.mjs",
+    "test:e2e": "playwright test",
+    "coverage": "npm run coverage --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.2",
+    "@vitest/coverage-v8": "^2.1.8"
   }
 }
