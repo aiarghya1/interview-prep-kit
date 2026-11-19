@@ -9,3 +9,5 @@ coverage/
 out/
 *.tsbuildinfo
 .data/
+.vercel
+.env*.local
