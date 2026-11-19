@@ -3,6 +3,7 @@ import type { Server } from 'node:http';
 import { startFixtureServer } from '../fixtures/serve.js';
 import { generateKit, deriveCompanyName, PipelineError } from '../src/pipeline.js';
 import { Fetcher } from '../src/retrieval/fetcher.js';
+import { LlmError } from '../src/llm/types.js';
 import { validateKit } from '../src/schema.js';
 import { FakeLlm } from './fakeLlm.js';
 import cases from '../../../examples/cases.sample.json';
@@ -110,6 +111,14 @@ describe('generateKit end to end (fake model, fixture sites)', () => {
     llm.failTasks = new Set(['extract_requirements']);
     await expect(generateKit(at(cases[0]!), deps(llm))).rejects.toBeInstanceOf(PipelineError);
     await expect(generateKit({ ...at(cases[0]!), jd: 'hi' }, deps())).rejects.toMatchObject({ code: 'INVALID_INPUT' });
+  });
+
+  it('keeps the provider failure reason (bad key vs quota vs outage)', async () => {
+    for (const code of ['LLM_NOT_CONFIGURED', 'LLM_RATE_LIMITED', 'LLM_UNAVAILABLE'] as const) {
+      const llm = new FakeLlm();
+      llm.json = async () => { throw new LlmError(code, 'x'); };
+      await expect(generateKit(at(cases[0]!), deps(llm))).rejects.toMatchObject({ code });
+    }
   });
 });
 

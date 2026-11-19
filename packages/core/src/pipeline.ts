@@ -60,7 +60,7 @@ export interface PipelineDeps {
   maxCoveragePasses?: number;
 }
 
-export type PipelineErrorCode = 'INVALID_INPUT' | 'EXTRACTION_FAILED' | 'LLM_UNAVAILABLE' | 'KIT_INVALID';
+export type PipelineErrorCode = 'INVALID_INPUT' | 'EXTRACTION_FAILED' | 'LLM_UNAVAILABLE' | 'LLM_NOT_CONFIGURED' | 'LLM_RATE_LIMITED' | 'KIT_INVALID';
 
 export class PipelineError extends Error {
   constructor(
@@ -170,7 +170,8 @@ export async function runPipeline(input: KitInput, deps: PipelineDeps): Promise<
   const [extracted, crawl] = await Promise.all([
     extractP.catch((err) => {
       if (err instanceof LlmError) {
-        throw new PipelineError(err.code === 'LLM_INVALID_OUTPUT' ? 'EXTRACTION_FAILED' : 'LLM_UNAVAILABLE', err.message);
+        // Keep the provider's reason: a bad key and a used-up quota need different advice than an outage.
+        throw new PipelineError(err.code === 'LLM_INVALID_OUTPUT' ? 'EXTRACTION_FAILED' : err.code, err.message);
       }
       throw new PipelineError('EXTRACTION_FAILED', (err as Error).message);
     }) as Promise<ExtractedRole>,
