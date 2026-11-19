@@ -12,6 +12,8 @@
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "evaluate": "tsx packages/core/src/cli/evaluate.ts",
-    "fixtures": "tsx packages/core/fixtures/serve.ts"
+    "fixtures": "tsx packages/core/fixtures/serve.ts",
+    "dev:api": "npm run dev -w @kit/api",
+    "start:api": "npm run start -w @kit/api"
   }
 }
