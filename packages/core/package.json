@@ -4,7 +4,12 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
+    "./edit": "./src/edit.ts",
+    "./practice": "./src/practice.ts",
+    "./coverage": "./src/coverage.ts",
+    "./merge": "./src/merge.ts"
   },
   "scripts": {
     "test": "vitest run",
