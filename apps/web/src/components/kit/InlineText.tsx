@@ -30,6 +30,8 @@ export function InlineText({
   const ref = useRef<HTMLTextAreaElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>();
   const committed = useRef(value);
+  // Escape blurs the field; the blur handler must not then save what Escape discarded.
+  const discarding = useRef(false);
 
   useEffect(() => {
     if (!focused) {
@@ -69,7 +71,8 @@ export function InlineText({
       onFocus={() => setFocused(true)}
       onBlur={() => {
         setFocused(false);
-        commit(draft);
+        if (discarding.current) discarding.current = false;
+        else commit(draft);
       }}
       onChange={(e) => {
         const v = multiline ? e.target.value : e.target.value.replace(/\n/g, ' ');
@@ -81,6 +84,7 @@ export function InlineText({
         if (e.key === 'Escape') {
           clearTimeout(timer.current);
           setDraft(committed.current);
+          discarding.current = true;
           (e.target as HTMLTextAreaElement).blur();
         } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey || !multiline)) {
           e.preventDefault();

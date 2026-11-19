@@ -26,7 +26,8 @@ export function Header() {
   return (
     <header className="border-b border-slate-200 bg-white">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-        <Link href="/kits" className="flex items-center gap-2 font-semibold text-slate-900">
+        {/* No prefetch: signed out, it would cache a redirect to /login. */}
+        <Link href="/kits" prefetch={false} className="flex items-center gap-2 font-semibold text-slate-900">
           <span aria-hidden className="grid h-7 w-7 place-items-center rounded-md bg-brand-600 text-xs font-bold text-white">IP</span>
           <span>Interview Prep Kit</span>
         </Link>

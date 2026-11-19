@@ -53,7 +53,8 @@ export function KitWorkspace({ k, note }: { k: ReturnType<typeof useKit>; note?:
   const uncoveredMust = kit.coverage.uncovered_requirement_ids.filter((id) => kit.role.requirements.find((r) => r.id === id)?.priority === 'must');
   const notes = (kit.source.notes ?? []).filter((n) => !/^NO_PUBLIC_DISCUSSION/.test(n));
   const regen = view.regen;
-  const regenKey = regen ? `${regen.section}-${regen.finishedAt}` : null;
+  // Includes status: dismissing a success must not also hide a later failure.
+  const regenKey = regen ? `${regen.section}-${regen.status}-${regen.finishedAt}` : null;
 
   return (
     <div className="space-y-5">
@@ -119,7 +120,7 @@ export function KitWorkspace({ k, note }: { k: ReturnType<typeof useKit>; note?:
         {tab === 'flashcards' && <Flashcards kit={kit} dispatch={dispatch} regen={regen} onRegenerate={regenerate} />}
         {tab === 'schedule' && <Schedule kit={kit} stale={view.scheduleStale} regen={regen} onRegenerate={regenerate} />}
         {tab === 'practice' && <Practice kitId={view.id} kit={kit} />}
-        {tab === 'stories' && <StoryBank kitId={view.id} kit={kit} initial={view.stories ?? []} />}
+        {tab === 'stories' && <StoryBank kitId={view.id} kit={kit} initial={view.stories} />}
       </div>
     </div>
   );
