@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { Banner, Button, Card, Field, Input } from './ui';
@@ -11,7 +11,6 @@ const REASONS: Record<string, string> = {
 };
 
 export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
-  const router = useRouter();
   const params = useSearchParams();
   const next = params.get('next');
   const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : '/kits';
@@ -29,8 +28,9 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
     setFieldErrors({});
     try {
       await api(`/auth/${mode}`, { body: { email, password } });
-      router.replace(safeNext);
-      router.refresh();
+      // Full navigation, not router.replace: the client router may hold a
+      // prefetched "redirect to login" for this page from before sign-in.
+      window.location.assign(safeNext);
     } catch (err) {
       const e = err as ApiError;
       if (e.details?.length) setFieldErrors(Object.fromEntries(e.details.map((d) => [d.path ?? '', d.message])));

@@ -12,6 +12,7 @@
 import {
   computeCoverage,
   categoryForRequirement,
+  contextOf,
   generateCategoryQuestions,
   isProtected,
   mergeRegenerated,
@@ -191,12 +192,7 @@ export class JobRunner {
       const extra = await generateCategoryQuestions({
         llm,
         plan: { category, requirements: gaps, count: gaps.length, reason: 'coverage gap after regeneration' },
-        ctx: {
-          roleTitle: kit.role.title,
-          seniority: kit.role.seniority,
-          brief: { ...kit.company_brief, found: kit.company_brief.sources.length > 0 },
-          hiring: (kit.research?.hiring_process as never) ?? { found: false, source_type: 'none', stages: [], formats: [], tips: [], sources: [] },
-        },
+        ctx: contextOf(kit),
         gapMode: true,
       }).catch(() => []);
       fresh.push(...extra);

@@ -90,7 +90,7 @@ export function analyseStories(kit: Kit, stories: Story[]): StoryAnalysis {
 
   const kindRank = (r: Requirement) => (r.kind === 'technical' ? 1 : 0);
   const mustGaps = kit.role.requirements
-    .filter((r) => r.priority === 'must' && (byRequirement[r.id]?.length ?? 0) === 0)
+    .filter((r) => r.priority === 'must' && byRequirement[r.id]!.length === 0)
     .sort((a, b) => kindRank(a) - kindRank(b));
 
   const texts = new Map(stories.map((s) => [s.id, storyTokens(`${s.title} ${s.situation} ${s.action} ${s.result}`)]));
@@ -112,7 +112,7 @@ export function analyseStories(kit: Kit, stories: Story[]): StoryAnalysis {
   const answered = Object.values(usage).reduce((a, b) => a + b, 0);
   const overused =
     stories.length >= 2 ? Object.entries(usage).filter(([, n]) => n >= 3 && n > answered / 2).map(([id]) => id) : [];
-  const unused = stories.filter((s) => s.requirement_ids.length === 0 && (usage[s.id] ?? 0) === 0).map((s) => s.id);
+  const unused = stories.filter((s) => s.requirement_ids.length === 0 && usage[s.id] === 0).map((s) => s.id);
 
   return { byRequirement, mustGaps, byQuestion, unmatchedQuestions, usage, overused, unused };
 }

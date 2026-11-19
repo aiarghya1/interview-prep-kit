@@ -68,7 +68,7 @@ export function useKit(id: string) {
         const cur = viewRef.current;
         const finished = cur && (s.status !== cur.status || (cur.regen?.status === 'running' && s.regen?.status !== 'running') || s.version > cur.version);
         if (finished) await load();
-        else setView((prev) => (prev ? { ...prev, progress: s.progress, regen: s.regen, scheduleStale: s.scheduleStale } : prev));
+        else setView((prev) => ({ ...prev!, progress: s.progress, regen: s.regen, scheduleStale: s.scheduleStale }));
       } catch {
         /* transient: next tick retries */
       }
@@ -165,7 +165,7 @@ export function useKit(id: string) {
       await flush();
       const res = await api<KitView | { regen: RegenState }>(`/kits/${id}/regenerate`, { body: { section } });
       if ('kit' in res) acceptBase(res);
-      else setView((prev) => (prev ? { ...prev, regen: res.regen } : prev));
+      else setView((prev) => ({ ...prev!, regen: res.regen }));
     },
     [id, flush, acceptBase],
   );

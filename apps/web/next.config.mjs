@@ -8,6 +8,8 @@ const API_URL = process.env.API_URL ?? 'http://localhost:4000';
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Separate build output for end-to-end runs, so they never clobber a running dev server.
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   transpilePackages: ['@kit/core'],
   async rewrites() {
     return [{ source: '/api/:path*', destination: `${API_URL}/api/:path*` }];

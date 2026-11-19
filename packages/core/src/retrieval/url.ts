@@ -39,7 +39,6 @@ export function normaliseUserUrl(input: string): URL {
     throw new RetrievalError('INVALID_URL', `Only http and https URLs are supported (got ${url.protocol})`, input);
   }
   if (url.username || url.password) throw new RetrievalError('INVALID_URL', 'URLs with credentials are not allowed', input);
-  if (!url.hostname) throw new RetrievalError('INVALID_URL', 'URL has no host', input);
   url.hash = '';
   return url;
 }
@@ -67,7 +66,7 @@ export function isPrivateAddress(ip: string): boolean {
   if (v === 4) {
     const n = ipv4ToInt(ip);
     return V4_BLOCKS.some(([base, bits]) => {
-      const mask = bits === 0 ? 0 : (~0 << (32 - bits)) >>> 0;
+      const mask = (~0 << (32 - bits)) >>> 0;
       return (n & mask) === (ipv4ToInt(base) & mask);
     });
   }
@@ -81,8 +80,11 @@ export function isPrivateAddress(ip: string): boolean {
   return true; // not an IP at all: treat as unsafe
 }
 
+export type Resolver = (host: string) => Promise<string[]>;
+export const dnsResolve: Resolver = async (host) => (await lookup(host, { all: true })).map((a) => a.address);
+
 /** Throws RetrievalError if the URL must not be fetched under this policy. */
-export async function assertFetchable(url: URL, policy: UrlPolicy): Promise<void> {
+export async function assertFetchable(url: URL, policy: UrlPolicy, resolve: Resolver = dnsResolve): Promise<void> {
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {
     throw new RetrievalError('INVALID_URL', `Unsupported protocol ${url.protocol}`, url.href);
   }
@@ -95,7 +97,7 @@ export async function assertFetchable(url: URL, policy: UrlPolicy): Promise<void
   if (isIP(host)) addresses = [host];
   else {
     try {
-      addresses = (await lookup(host, { all: true })).map((a) => a.address);
+      addresses = await resolve(host);
     } catch {
       throw new RetrievalError('NETWORK', `Could not resolve ${host}`, url.href);
     }

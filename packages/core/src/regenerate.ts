@@ -29,7 +29,8 @@ export const REGEN_SECTIONS: RegenSection[] = [
   'questions:company-fit',
 ];
 
-function contextOf(kit: Kit): QuestionContext {
+/** Question-generation context rebuilt from a stored kit (role, brief, hiring process). */
+export function contextOf(kit: Kit): QuestionContext {
   const hp = kit.research?.hiring_process;
   const hiring: HiringProcess = hp
     ? { ...hp, formats: hp.formats as HiringProcess['formats'] }

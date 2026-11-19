@@ -53,13 +53,15 @@ function QuestionItem({
 }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: q.id });
   const reqText = (id: string) => requirements.find((r) => r.id === id);
+  // Numbering restarts per category, so labels name the category to stay unique.
+  const name = `${CATEGORY_LABEL[q.category]} question ${index + 1}`;
 
   return (
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cx('rounded-lg border bg-white p-3 shadow-sm', isDragging ? 'z-10 border-brand-500 shadow-lg' : 'border-slate-200')}
-      aria-label={`Question ${index + 1} of ${total}`}
+      aria-label={`${name} of ${total}`}
     >
       <div className="flex items-start gap-2">
         <button
@@ -67,18 +69,18 @@ function QuestionItem({
           type="button"
           {...attributes}
           {...listeners}
-          aria-label={`Reorder question ${index + 1}. Press space to pick up, arrow keys to move, space to drop.`}
+          aria-label={`Reorder ${name}. Press space to pick up, arrow keys to move, space to drop.`}
           className="mt-1 cursor-grab touch-none rounded px-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 active:cursor-grabbing"
         >
           <span aria-hidden>⋮⋮</span>
         </button>
         <div className="min-w-0 flex-1 space-y-2">
-          <InlineText value={q.prompt} label={`Question ${index + 1}`} required className="font-medium text-slate-900" onCommit={(v) => dispatch({ op: 'question.update', id: q.id, patch: { prompt: v } })} />
+          <InlineText value={q.prompt} label={name} required className="font-medium text-slate-900" onCommit={(v) => dispatch({ op: 'question.update', id: q.id, patch: { prompt: v } })} />
           <details className="group">
             <summary className="cursor-pointer select-none text-xs font-medium text-slate-500 hover:text-slate-800">Answer outline</summary>
             <InlineText
               value={q.answer_outline}
-              label={`Answer outline for question ${index + 1}`}
+              label={`Answer outline for ${name}`}
               placeholder="Key points a strong answer covers…"
               className="mt-1 whitespace-pre-wrap text-sm text-slate-700"
               onCommit={(v) => dispatch({ op: 'question.update', id: q.id, patch: { answer_outline: v } })}
@@ -157,7 +159,7 @@ function QuestionItem({
           >
             {q.state?.pinned ? 'Unpin' : 'Pin'}
           </Button>
-          <Button size="sm" variant="ghost" className="text-red-700 hover:bg-red-50" onClick={() => dispatch({ op: 'question.delete', id: q.id })} aria-label={`Delete question ${index + 1}`}>
+          <Button size="sm" variant="ghost" className="text-red-700 hover:bg-red-50" onClick={() => dispatch({ op: 'question.delete', id: q.id })} aria-label={`Delete ${name}`}>
             Delete
           </Button>
         </div>
@@ -224,7 +226,7 @@ export function QuestionBoard({
   /** Reorder within a category, expressed as a full ordering of all questions. */
   const reorderCategory = (category: QuestionCategory, newOrder: string[]) => {
     const queue = [...newOrder];
-    const ids = kit.questions.map((q) => (q.category === category ? queue.shift() ?? q.id : q.id));
+    const ids = kit.questions.map((q) => (q.category === category ? queue.shift()! : q.id));
     dispatch({ op: 'question.reorder', ids });
   };
 
@@ -237,7 +239,6 @@ export function QuestionBoard({
   const move = (category: QuestionCategory) => (id: string, delta: -1 | 1) => {
     const ids = kit.questions.filter((q) => q.category === category).map((q) => q.id);
     const i = ids.indexOf(id);
-    if (i + delta < 0 || i + delta >= ids.length) return;
     reorderCategory(category, arrayMove(ids, i, i + delta));
   };
 

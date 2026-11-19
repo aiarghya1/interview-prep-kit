@@ -40,7 +40,8 @@ export function isRelevant(item: Pick<DiscussionItem, 'title' | 'snippet'>, comp
   const text = `${item.title} ${item.snippet}`;
   const name = company.trim();
   if (name.length < 2) return false;
-  const nameRe = new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+  // Lookarounds, not \b: \b never matches after punctuation ("Yahoo!", "Acme Inc.").
+  const nameRe = new RegExp(`(?<![\\w])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w])`, 'i');
   return nameRe.test(text) && INTERVIEW_WORDS.test(text);
 }
 

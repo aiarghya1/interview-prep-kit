@@ -40,7 +40,7 @@ Use ONLY the provided pages (and the "About us" parts of the job description, if
 
 Return: {"enough_information": true, "summary": "", "what_they_do": "", "sources": []}`;
 
-const BRIEF_PAGE_ORDER: Record<string, number> = { home: 0, about: 1, engineering: 2, careers: 3, 'hiring-process': 4, other: 5 };
+const BRIEF_PAGE_ORDER: Record<CrawledPage['kind'], number> = { home: 0, about: 1, engineering: 2, careers: 3, 'hiring-process': 4, other: 5 };
 
 export function notFoundBrief(company: string, companyUrl: string, reason: string): CompanyBrief {
   return {
@@ -60,7 +60,7 @@ export async function writeCompanyBrief(args: {
   unreachableReason?: string;
 }): Promise<CompanyBrief> {
   const { llm, company, companyUrl, jd } = args;
-  const pages = [...args.pages].sort((a, b) => (BRIEF_PAGE_ORDER[a.kind] ?? 9) - (BRIEF_PAGE_ORDER[b.kind] ?? 9)).slice(0, 4);
+  const pages = [...args.pages].sort((a, b) => BRIEF_PAGE_ORDER[a.kind] - BRIEF_PAGE_ORDER[b.kind]).slice(0, 4);
   const material = pages.reduce((s, p) => s + p.text.length + (p.description?.length ?? 0), 0);
   if (pages.length === 0 || material < 80) {
     return notFoundBrief(company, companyUrl, args.unreachableReason ?? 'the company website returned no usable content');

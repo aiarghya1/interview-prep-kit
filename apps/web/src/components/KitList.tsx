@@ -43,7 +43,7 @@ export function KitList({ list }: { list: ReturnType<typeof useKitList> }) {
 
   async function remove(k: KitSummary) {
     if (!window.confirm(`Delete the kit for "${k.title}"? This cannot be undone.`)) return;
-    setKits((cur) => cur?.filter((x) => x.id !== k.id) ?? null);
+    setKits((cur) => cur!.filter((x) => x.id !== k.id));
     try {
       await api(`/kits/${k.id}`, { method: 'DELETE' });
     } catch {
