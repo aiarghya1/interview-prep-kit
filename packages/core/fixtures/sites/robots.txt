@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: /acme/private/
+Sitemap: {{ORIGIN}}/initech/sitemap.xml

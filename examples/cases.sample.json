@@ -1,0 +1,32 @@
+[
+  {
+    "id": "case-01",
+    "jd": "Senior Backend Engineer — Payments\n\nAcme builds payment APIs for online marketplaces. You will design and own services that move money for 2,000+ marketplaces.\n\nWhat you'll do:\n- Design, build and operate backend services in Node.js and TypeScript\n- Own the reliability of our ledger and payout systems\n- Mentor engineers and lead technical design reviews\n\nRequirements:\n- 5+ years of backend development experience\n- Strong experience with Node.js and TypeScript\n- Solid understanding of relational databases (PostgreSQL)\n- Experience designing distributed systems and event-driven architectures (Kafka or similar)\n- Clear written communication; you write design docs\n- Experience mentoring other engineers\n\nNice to have:\n- Experience in payments, fintech or ledgering\n- Familiarity with Kubernetes\n- Bonus points for open-source contributions",
+    "company_url": "http://localhost:8099/acme/",
+    "days": 5
+  },
+  {
+    "id": "case-02",
+    "jd": "Frontend developer wanted. Must know React.",
+    "company_url": "http://localhost:8099/globex/",
+    "days": 1
+  },
+  {
+    "id": "case-03",
+    "jd": "Java Backend Engineer\n\nInitech is hiring a backend engineer to work on reporting software for banks.\n\nYou have:\n- 3+ years of Java and Spring Boot\n- Experience with SQL and data modelling\n- Good collaboration skills and comfort working with business stakeholders\n\nPreferred:\n- Knowledge of banking regulation or financial reporting",
+    "company_url": "http://localhost:8099/initech/",
+    "days": 14
+  },
+  {
+    "id": "case-04",
+    "jd": "Data Engineer\n\nRequirements:\n- Python and SQL\n- Experience with Airflow or similar orchestration tools\n- Building reliable ETL pipelines\n\nNice to have:\n- dbt",
+    "company_url": "http://localhost:8099/does-not-exist/",
+    "days": 60
+  },
+  {
+    "id": "case-05",
+    "jd": "Frontend developer wanted. Must know React.",
+    "company_url": "http://localhost:8099/globex/",
+    "days": 3
+  }
+]
