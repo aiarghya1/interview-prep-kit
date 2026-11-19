@@ -9,7 +9,7 @@ export class TokenBucket {
   private updated: number;
 
   constructor(
-    private readonly perMinute: number,
+    private perMinute: number,
     private readonly now: () => number = Date.now,
   ) {
     this.tokens = perMinute;
@@ -29,6 +29,15 @@ export class TokenBucket {
     this.tokens -= c;
     if (this.tokens >= 0) return 0;
     return Math.ceil((-this.tokens / this.perMinute) * 60_000);
+  }
+
+  /** Provider says what the real per-minute limit is (it differs per model). */
+  setLimit(perMinute: number) {
+    if (perMinute > 0 && perMinute !== this.perMinute) {
+      this.refill();
+      this.tokens = Math.min(this.tokens, perMinute);
+      this.perMinute = perMinute;
+    }
   }
 
   /** Provider says how many tokens remain: never believe we have more. */

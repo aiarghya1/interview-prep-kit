@@ -27,7 +27,17 @@ export interface GroqOptions {
   sleep?: (ms: number) => Promise<void>;
 }
 
-export const DEFAULT_GROQ_MODELS = ['llama-3.3-70b-versatile', 'meta-llama/llama-4-scout-17b-16e-instruct', 'llama-3.1-8b-instant'];
+/**
+ * Tried in order. Models the key can't use (404 / decommissioned) are skipped
+ * automatically, so the list can name models from several Groq generations.
+ */
+export const DEFAULT_GROQ_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
+
+/** Reasoning models spend completion tokens thinking; keep that small and budget for it. */
+function modelParams(model: string): { extra: Record<string, unknown>; reasoningTokens: number } {
+  if (model.startsWith('openai/gpt-oss')) return { extra: { reasoning_effort: 'low' }, reasoningTokens: 600 };
+  return { extra: {}, reasoningTokens: 0 };
+}
 
 type Message = { role: 'system' | 'user' | 'assistant'; content: string };
 
@@ -41,6 +51,8 @@ export class GroqLlm implements Llm {
   private readonly sleep: (ms: number) => Promise<void>;
   /** Serialise calls: one in flight keeps TPM accounting honest. */
   private queue: Promise<unknown> = Promise.resolve();
+  /** Models that rejected a request parameter; sent without extras from then on. */
+  private readonly plainModels = new Set<string>();
 
   constructor(private readonly opts: GroqOptions) {
     if (!opts.apiKey) throw new LlmError('LLM_NOT_CONFIGURED', 'GROQ_API_KEY is not set');
@@ -99,13 +111,15 @@ export class GroqLlm implements Llm {
   }
 
   private async complete(req: LlmJsonRequest<unknown>, messages: Message[]): Promise<string> {
-    const maxTokens = req.maxTokens ?? 1500;
-    const estimate = Math.ceil(messages.reduce((s, m) => s + m.content.length, 0) / 3.5) + maxTokens;
     const maxAttempts = this.opts.maxAttempts ?? 8;
     let attempt = 0;
 
     for (;;) {
       attempt += 1;
+      const model = this.model;
+      const params = this.plainModels.has(model) ? { extra: {}, reasoningTokens: 0 } : modelParams(model);
+      const maxTokens = (req.maxTokens ?? 1500) + params.reasoningTokens;
+      const estimate = Math.ceil(messages.reduce((s, m) => s + m.content.length, 0) / 3.5) + maxTokens;
       const wait = this.bucket.reserve(estimate);
       if (wait > 0) {
         this.opts.onEvent?.({ type: 'rate_limited', task: req.task, message: `Pacing to stay under the token budget`, waitMs: wait });
@@ -119,19 +133,23 @@ export class GroqLlm implements Llm {
           signal: AbortSignal.timeout(this.opts.timeoutMs ?? 60_000),
           headers: { 'content-type': 'application/json', authorization: `Bearer ${this.opts.apiKey}` },
           body: JSON.stringify({
-            model: this.model,
+            model,
             messages,
             temperature: req.temperature ?? 0.2,
             max_tokens: maxTokens,
             response_format: { type: 'json_object' },
+            ...params.extra,
           }),
         });
       } catch (err) {
+        this.bucket.refund(estimate);
         if (attempt >= maxAttempts) throw new LlmError('LLM_UNAVAILABLE', `Groq unreachable: ${(err as Error).message}`);
         await this.backoff(req.task, attempt, `network error: ${(err as Error).message}`);
         continue;
       }
 
+      const limit = Number(res.headers.get('x-ratelimit-limit-tokens'));
+      if (res.headers.has('x-ratelimit-limit-tokens') && limit > 0) this.bucket.setLimit(limit);
       const remaining = Number(res.headers.get('x-ratelimit-remaining-tokens'));
       if (Number.isFinite(remaining) && res.headers.has('x-ratelimit-remaining-tokens')) this.bucket.observeRemaining(remaining);
 
@@ -139,16 +157,37 @@ export class GroqLlm implements Llm {
         const data = (await res.json()) as any;
         const used = Number(data?.usage?.total_tokens);
         if (Number.isFinite(used)) this.bucket.refund(estimate - used);
-        this.opts.onEvent?.({ type: 'call', task: req.task, message: `${this.model} ok (${used || '?'} tokens)` });
+        this.opts.onEvent?.({ type: 'call', task: req.task, message: `${model} ok (${used || '?'} tokens)` });
         return String(data?.choices?.[0]?.message?.content ?? '');
       }
 
+      // A rejected request consumed (almost) nothing: give the reservation back.
+      this.bucket.refund(estimate);
       const body = await res.text().catch(() => '');
       let errInfo: { message?: string; code?: string; failed_generation?: string } = {};
       try {
         errInfo = (JSON.parse(body) as any)?.error ?? {};
       } catch {
         /* non-JSON error */
+      }
+
+      // Model not available to this key (or retired): skip to the next configured one.
+      const unavailable =
+        res.status === 404 || errInfo.code === 'model_not_found' || errInfo.code === 'model_decommissioned' || /does not exist|decommissioned|not have access/i.test(errInfo.message ?? '');
+      if (unavailable && res.status !== 429) {
+        if (this.modelIndex < this.opts.models.length - 1) {
+          this.modelIndex += 1;
+          this.opts.onEvent?.({ type: 'model_fallback', task: req.task, message: `${model} is not available to this API key; using ${this.model}` });
+          attempt -= 1;
+          continue;
+        }
+        throw new LlmError('LLM_NOT_CONFIGURED', `None of the configured Groq models are available to this key (${this.opts.models.join(', ')}). Set GROQ_MODELS.`);
+      }
+      // Model doesn't accept an extra parameter (e.g. reasoning_effort): retry without it.
+      if (res.status === 400 && Object.keys(params.extra).length && /reasoning|unsupported|not supported|property/i.test(errInfo.message ?? '')) {
+        this.plainModels.add(model);
+        attempt -= 1;
+        continue;
       }
 
       if (res.status === 429) {
