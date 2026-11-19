@@ -61,6 +61,26 @@ describe('GroqLlm', () => {
     await expect(d.llm.json({ task: 't', system: 's', user: 'u', schema })).rejects.toMatchObject({ code: 'LLM_NOT_CONFIGURED' });
   });
 
+  it('skips a model the key cannot use and remembers it', async () => {
+    const c = client([err(404, 'The model `big` does not exist or you do not have access to it.', {}, 'model_not_found'), ok('{"answer": 5}'), ok('{"answer": 6}')]);
+    await expect(c.llm.json({ task: 't', system: 's', user: 'u', schema })).resolves.toEqual({ answer: 5 });
+    await c.llm.json({ task: 't', system: 's', user: 'u', schema });
+    expect(c.bodies.map((b) => b.model)).toEqual(['big', 'small', 'small']);
+    expect(c.events.map((e) => e.type)).toContain('model_fallback');
+  });
+
+  it('reports LLM_NOT_CONFIGURED when no configured model is available', async () => {
+    const c = client([err(404, 'does not exist'), err(404, 'does not exist')]);
+    await expect(c.llm.json({ task: 't', system: 's', user: 'u', schema })).rejects.toMatchObject({ code: 'LLM_NOT_CONFIGURED' });
+  });
+
+  it('sends reasoning_effort to gpt-oss models, and drops it if rejected', async () => {
+    const c = client([err(400, 'property reasoning_effort is unsupported'), ok('{"answer": 7}')], ['openai/gpt-oss-120b']);
+    await expect(c.llm.json({ task: 't', system: 's', user: 'u', schema })).resolves.toEqual({ answer: 7 });
+    expect(c.bodies[0].reasoning_effort).toBe('low');
+    expect(c.bodies[1].reasoning_effort).toBeUndefined();
+  });
+
   it('fails with LLM_INVALID_OUTPUT after bounded repairs', async () => {
     const c = client([ok('x'), ok('y'), ok('z')]);
     await expect(c.llm.json({ task: 't', system: 's', user: 'u', schema })).rejects.toMatchObject({ code: 'LLM_INVALID_OUTPUT' });
@@ -74,6 +94,13 @@ describe('rate helpers', () => {
     expect(parseDurationMs('350ms')).toBe(350);
     expect(parseDurationMs('2')).toBe(2000);
     expect(parseDurationMs('soon')).toBeUndefined();
+  });
+  it('token bucket adopts the provider-reported limit', () => {
+    let t = 0;
+    const b = new TokenBucket(6000, () => t);
+    b.setLimit(8000);
+    t = 60_000;
+    expect(b.reserve(8000)).toBe(0);
   });
   it('token bucket makes callers wait once the minute budget is spent', () => {
     let t = 0;

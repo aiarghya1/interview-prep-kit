@@ -74,6 +74,14 @@ describe('generateKit end to end (fake model, fixture sites)', () => {
     expect(kit.schedule.days).toHaveLength(60);
   });
 
+  it('does not search public discussion with a company name guessed from an unreachable URL', async () => {
+    let searched = 0;
+    const kit = await generateKit(at(cases[3]!), { ...deps(), search: async () => { searched++; return { items: [], searched: [], skipped: [] }; } });
+    expect(searched).toBe(0);
+    expect(kit.research!.steps.find((s) => s.step === 'discussion')).toMatchObject({ status: 'skipped' });
+    expect(kit.source.notes!.join(' ')).toMatch(/company could not be identified/);
+  });
+
   it('invalid company URL still yields a kit', async () => {
     const kit = await generateKit({ ...at(cases[3]!), company_url: 'not a url', days: 2 }, deps());
     expect(kit.source.notes!.join(' ')).toMatch(/INVALID_COMPANY_URL/);

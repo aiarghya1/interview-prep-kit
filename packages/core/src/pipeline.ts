@@ -195,10 +195,17 @@ export async function runPipeline(input: KitInput, deps: PipelineDeps): Promise<
 
   const home = pages.find((p) => p.kind === 'home');
   const company = extracted.company || deriveCompanyName(startUrl, home?.siteName, home?.title);
+  // A name guessed only from the URL (site unreachable, posting doesn't name
+  // the company) is too weak to search the web with: it finds namesakes.
+  const nameIsGuess = !extracted.company && !home;
 
   // ---- 2. Public discussion ----
   let discussion: DiscussionResult = { items: [], searched: [], skipped: [] };
   if (!company) skip('discussion', 'No company name to search for');
+  else if (nameIsGuess) {
+    skip('discussion', `Company name "${company}" is only a guess from the URL; not searching to avoid unrelated results`);
+    sourceNotes.push('NO_PUBLIC_DISCUSSION: not searched, because the company could not be identified (site unreachable and not named in the posting).');
+  }
   else if (timeLeft() < 60_000) skip('discussion', 'Skipped to finish within the time budget');
   else {
     const search = deps.search ?? ((c: string) => searchInterviewDiscussion(c, { tavilyApiKey: process.env.TAVILY_API_KEY }));
