@@ -22,11 +22,11 @@ import { createIdAllocator } from './ids.js';
 import { categoryForRequirement, runCoverageLoop } from './coverage.js';
 import { buildSchedule } from './schedule.js';
 import { validateKit, type Kit, type Question, type QuestionCategory, type Requirement, type Research } from './schema.js';
-import { crawlCompanySite, type CrawlResult, type SkippedSource } from './retrieval/crawler.js';
+import { crawlCompanySite, type CrawledPage, type CrawlResult, type SkippedSource } from './retrieval/crawler.js';
 import type { Fetcher } from './retrieval/fetcher.js';
 import { normaliseUserUrl } from './retrieval/url.js';
 import { RetrievalError } from './retrieval/errors.js';
-import { searchInterviewDiscussion, type DiscussionResult } from './discussion/search.js';
+import { searchInterviewDiscussion, type DiscussionItem, type DiscussionResult } from './discussion/search.js';
 import { LlmError, type Llm } from './llm/types.js';
 import { extractRole, type ExtractedRole } from './steps/extract.js';
 import { NO_HIRING_PROCESS, notFoundBrief, summariseHiringProcess, writeCompanyBrief, type CompanyBrief, type HiringProcess } from './steps/research.js';
@@ -98,7 +98,18 @@ export function deriveCompanyName(url: URL | null, siteName?: string, title?: st
   return seg.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+/** Retrieved material kept with a kit so a section can be regenerated without re-crawling. */
+export interface ResearchCorpus {
+  jd: string;
+  pages: CrawledPage[];
+  discussion: DiscussionItem[];
+}
+
 export async function generateKit(input: KitInput, deps: PipelineDeps): Promise<Kit> {
+  return (await runPipeline(input, deps)).kit;
+}
+
+export async function runPipeline(input: KitInput, deps: PipelineDeps): Promise<{ kit: Kit; corpus: ResearchCorpus }> {
   validateKitInput(input);
   const now = deps.now ?? (() => new Date());
   const steps: Research['steps'] = [];
@@ -355,5 +366,8 @@ export async function generateKit(input: KitInput, deps: PipelineDeps): Promise<
   const valid = validateKit(kit);
   if (!valid.ok) throw new PipelineError('KIT_INVALID', `Generated kit failed validation: ${valid.issues.slice(0, 5).join('; ')}`);
   emit('validate', 'done', 'Kit structure valid');
-  return valid.kit;
+  return {
+    kit: valid.kit,
+    corpus: { jd: input.jd, pages: pages.map((p) => ({ ...p, text: p.text.slice(0, 8000) })), discussion: discussion.items },
+  };
 }
