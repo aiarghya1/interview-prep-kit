@@ -9,7 +9,8 @@
     "./edit": "./src/edit.ts",
     "./practice": "./src/practice.ts",
     "./coverage": "./src/coverage.ts",
-    "./merge": "./src/merge.ts"
+    "./merge": "./src/merge.ts",
+    "./stories": "./src/stories.ts"
   },
   "scripts": {
     "test": "vitest run",
