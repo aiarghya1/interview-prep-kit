@@ -116,7 +116,7 @@ export function kitsRouter(config: Config, runner: JobRunner) {
         created = out.created;
         return { kit: out.kit, highWater: out.highWater, set: out.questionsChanged ? { scheduleStale: true } : undefined };
       });
-      res.json({ kit: doc.kit, version: doc.version, created, scheduleStale: Boolean(doc.scheduleStale) });
+      res.json({ kit: doc.kit, version: doc.version, highWater: doc.highWater, created, scheduleStale: Boolean(doc.scheduleStale) });
     }),
   );
 

@@ -75,6 +75,7 @@ export function toView(doc: StoredKit) {
     input: doc.input,
     kit: doc.kit,
     version: doc.version,
+    highWater: doc.highWater ?? { q: 0, f: 0 },
     progress: doc.progress ?? [],
     error: doc.error?.code ? doc.error : null,
     regen: doc.regen?.section ? doc.regen : null,
