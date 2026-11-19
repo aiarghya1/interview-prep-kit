@@ -372,6 +372,9 @@ export async function runPipeline(input: KitInput, deps: PipelineDeps): Promise<
   };
 
   const valid = validateKit(kit);
+  // Defensive invariant: every step above validates its own output, so this
+  // should be unreachable; it exists so a future bug can't ship a malformed kit.
+  /* v8 ignore next */
   if (!valid.ok) throw new PipelineError('KIT_INVALID', `Generated kit failed validation: ${valid.issues.slice(0, 5).join('; ')}`);
   emit('validate', 'done', 'Kit structure valid');
   return {

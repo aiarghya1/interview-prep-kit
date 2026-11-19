@@ -220,11 +220,11 @@ export function buildSchedule({ days, requirements, questions }: BuildScheduleIn
 
   // Must-haves with no question at all can't appear via question ids; name
   // them on day 1 so they are still scheduled rather than silently dropped.
-  const scheduled = new Set(out.flatMap((d) => d.requirement_ids ?? []));
+  const scheduled = new Set(out.flatMap((d) => d.requirement_ids!));
   const orphanMust = mustIds.filter((id) => !scheduled.has(id));
   if (orphanMust.length > 0) {
     const first = out[0]!;
-    first.requirement_ids = [...(first.requirement_ids ?? []), ...orphanMust];
+    first.requirement_ids = [...first.requirement_ids!, ...orphanMust];
     first.focus = `${first.focus} (+ self-study: ${orphanMust.map((id) => shorten(reqById.get(id)!.text, 30)).join('; ')})`;
     first.minutes += 20 * orphanMust.length;
   }
