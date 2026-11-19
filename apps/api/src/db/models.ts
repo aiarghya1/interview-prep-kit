@@ -31,6 +31,8 @@ const KitSchema = new Schema(
     error: { code: String, message: String },
     corpus: { type: Schema.Types.Mixed, select: false },
     practice: { type: Schema.Types.Mixed, default: {} },
+    /** The candidate's own STAR stories (story bank). User content, kept outside the generated kit. */
+    stories: { type: Schema.Types.Mixed, default: [] },
     regen: {
       section: String,
       status: { type: String, enum: ['running', 'done', 'failed'] },

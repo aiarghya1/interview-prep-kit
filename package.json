@@ -14,6 +14,8 @@
     "evaluate": "tsx packages/core/src/cli/evaluate.ts",
     "fixtures": "tsx packages/core/fixtures/serve.ts",
     "dev:api": "npm run dev -w @kit/api",
-    "start:api": "npm run start -w @kit/api"
+    "start:api": "npm run start -w @kit/api",
+    "dev:web": "npm run dev -w @kit/web",
+    "build:web": "npm run build -w @kit/web"
   }
 }

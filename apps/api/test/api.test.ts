@@ -255,3 +255,18 @@ describe('practice', () => {
     expect((await agent.delete(`/api/kits/${kit.id}/practice`).expect(200)).body.summary.seen).toBe(0);
   });
 });
+
+describe('story bank', () => {
+  it('stores and validates the candidate\'s stories', async () => {
+    const agent = await signUp();
+    const kit = await readyKit(agent);
+    const stories = [{ id: 's1', title: 'Led the payments migration', action: 'Planned a dual-write rollout', requirement_ids: ['r1'] }];
+    const res = await agent.put(`/api/kits/${kit.id}/stories`).send({ stories }).expect(200);
+    expect(res.body.stories[0]).toMatchObject({ id: 's1', situation: '', requirement_ids: ['r1'] });
+    expect((await agent.get(`/api/kits/${kit.id}`)).body.stories).toHaveLength(1);
+    await agent.put(`/api/kits/${kit.id}/stories`).send({ stories: [{ id: 'bad', title: '' }] }).expect(400);
+    const other = await signUp('b@example.com');
+    await other.put(`/api/kits/${kit.id}/stories`).send({ stories: [] }).expect(404);
+  });
+});
+

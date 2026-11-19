@@ -11,6 +11,7 @@ import {
   REGEN_SECTIONS,
   regenerateSchedule,
   summarisePractice,
+  StoriesSchema,
   type CardProgress,
   type RegenSection,
 } from '@kit/core';
@@ -188,6 +189,17 @@ export function kitsRouter(config: Config, runner: JobRunner) {
       const next = recordReview(prev.success ? prev.data : undefined, confidence, new Date());
       await KitModel.updateOne({ _id: doc._id }, { $set: { [`practice.${cardId}`]: next } });
       res.json(practiceView({ ...doc, practice: { ...doc.practice, [cardId]: next } }));
+    }),
+  );
+
+  /** Story bank: replace the whole list (small, user-authored, edited as a unit). */
+  r.put(
+    '/:id/stories',
+    asyncHandler(async (req, res) => {
+      const stories = StoriesSchema.parse(req.body?.stories);
+      const out = await KitModel.updateOne(ownerFilter(req.params.id!, req.userId), { $set: { stories } });
+      if (out.matchedCount === 0) throw new ApiError(404, 'NOT_FOUND', 'Kit not found');
+      res.json({ stories });
     }),
   );
 
