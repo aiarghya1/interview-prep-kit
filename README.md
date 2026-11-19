@@ -122,17 +122,35 @@ The sample cases also include a two-line description, a 404 company, 1-day and 6
 ### Tests
 
 ```bash
-npm test          # all workspaces
+npm test            # unit + integration, all workspaces
+npm run coverage    # same, with coverage; fails below 100%
+npm run test:e2e    # Playwright: real browser, production build, real API + MongoDB
 npm run typecheck
 ```
 
-### Deployment
+| Layer | Tests | What runs |
+|---|---|---|
+| **Unit** | ~300 | Pure logic with fakes: schedule, coverage loop, schema, edits/merge/regeneration, extraction rules, retrieval (URL policy, robots, scoring, cleaning, fetcher on a fake network), Groq client (rate limits, fallbacks, repair), discussion search, practice, stories; API helpers (config, error mapping, view shaping); every React component and hook in jsdom with Testing Library |
+| **Integration** | ~60 | Real HTTP and a real database: the crawler and pipeline against the local fixture sites; the batch command end to end in-process; the Express API over HTTP against an in-memory MongoDB with real background jobs (auth/session errors, ownership, dedupe, rate limits, edits, regeneration that keeps edits, version conflicts, restart recovery, practice, stories); `server.ts` booted and shut down |
+| **End-to-end** | 5 scenarios | Playwright + Chromium against `next build` / `next start`, the real API and MongoDB, fixture sites and the scripted model: sign up → build a kit → inline edit → **keyboard drag-and-drop** → regenerate keeping the edit → stale schedule rebuild → keyboard practice → story bank → reload → sign out; batch upload from a real file; thin posting + unreachable company; duplicate submission; phone viewport (no horizontal scroll) |
 
-- **API on Render** (free web service). [`render.yaml`](render.yaml) is a Blueprint: build `npm ci`, start `npm run start:api`, health check `/api/health`. Set `MONGODB_URI` (Atlas M0), `GROQ_API_KEY` and optionally `TAVILY_API_KEY`. `JWT_SECRET` is generated. `NODE_ENV=production` turns on private-address blocking and `Secure` cookies.
-- **Web on Vercel.** Set the project root to `apps/web` (Vercel installs the npm workspace from the repo root) and set `API_URL` to the Render URL. Deploying from the CLI (`vercel deploy --prod` at the repo root) uploads local files, so [`.vercelignore`](.vercelignore) excludes `.env`, `.env.local` and `.data/` to keep secrets and local data out of the upload.
-- **Database on MongoDB Atlas** (free M0). Allow Render's outbound IPs, or `0.0.0.0/0` for a demo.
+**Coverage: 100% statements, branches, functions and lines in all three packages**, enforced by thresholds (`npm run coverage` fails otherwise):
 
-Render's free tier sleeps when idle. The first request after a sleep takes about 30 s, and any jobs interrupted by a spin-down are re-queued on boot (see [Jobs](#slow-failing-or-repeated-generation)).
+| Package | Statements | Branches | Functions | Lines |
+|---|---|---|---|---|
+| `packages/core` | 100% (2622) | 100% (1332) | 100% (153) | 100% (2622) |
+| `apps/api` | 100% (666) | 100% (274) | 100% (40) | 100% (666) |
+| `apps/web` | 100% (1969) | 100% (942) | 100% (136) | 100% (1969) |
+
+Getting there removed unreachable defensive branches rather than writing contrived tests for them. Three regions are excluded with a `v8 ignore` comment explaining why: the two "run when executed directly" entry guards (`server.ts`, `cli/evaluate.ts`; both are exercised by calling the exported `start()` / `main()`), and one post-validation invariant in the pipeline that earlier steps make unreachable. jsdom lacks `Blob.text()`, so the web test setup adds a shim; the real browser path is covered by the Playwright batch-upload test.
+
+Writing these tests found and fixed real bugs:
+- **Sign-in in production builds bounced back to the login page:** the header prefetched `/kits` while signed out and the client router reused that cached redirect after sign-in (only reproducible with `next build`; caught by the e2e suite). Sign-in now does a full navigation, and that link no longer prefetches.
+- **Escape in an inline editor saved the text instead of discarding it** (the blur triggered by Escape committed the stale draft).
+- **Whitespace-only model output** passed the length check, trimmed to empty, and would have produced an invalid kit; such items are now dropped.
+- **Company names ending in punctuation** ("Yahoo!", "Acme Inc.") never matched discussion results (`\b` doesn't match after punctuation).
+- **Duplicate accessible names:** every question category had a "Question 1"; labels now include the category.
+- A dismissed regeneration banner could hide a later failure for the same section.
 
 ---
 
